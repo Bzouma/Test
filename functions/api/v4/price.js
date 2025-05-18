@@ -10,16 +10,31 @@ export async function onRequest({ request }) {
   }
 
   const upstreamUrl = `https://price.jup.ag/v4/price?ids=${encodeURIComponent(ids)}`;
+  console.log("Proxying to:", upstreamUrl);
 
   try {
     const res = await fetch(upstreamUrl);
-    const text = await res.text(); // <- pour voir la réponse brute
-    return new Response(text, {
-      status: res.status,
-      headers: { 'Content-Type': 'application/json' }
+
+    if (!res.ok) {
+      console.error("Jupiter responded with:", res.status);
+      return new Response(JSON.stringify({ error: `Upstream error: ${res.status}` }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const data = await res.json();
+
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: `Proxy error: ${e.message}` }), {
+    console.error("Fetch to Jupiter failed:", e.message);
+    return new Response(JSON.stringify({ error: e.message }), {
       status: 502,
       headers: { 'Content-Type': 'application/json' }
     });
