@@ -13,14 +13,13 @@ export async function onRequest({ request }) {
 
   try {
     const res = await fetch(upstreamUrl);
-    const data = await res.json();
-
-    return new Response(JSON.stringify(data), {
+    const text = await res.text(); // <- pour voir la réponse brute
+    return new Response(text, {
       status: res.status,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: `Proxy error: ${e.message}` }), {
       status: 502,
       headers: { 'Content-Type': 'application/json' }
     });
